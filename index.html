@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阿瓦隆・線上對局</title>
+<style>
+/* 英文與數字使用 Calibri，中文使用微軟正黑體（Calibri 沒有中文字，會自動接用後面的字型） */
+:root{--bg:#f4efe3;--panel:#fffcf5;--inset:#f8f4ea;--line:#d8cfba;--ink:#1f2633;--dim:#6a7285;--gold:#d4b36a;--good:#4fb3a5;--evil:#c4504f;--yt:#8a6a1f;--gt:#1f7a6e;--et:#b03a39;--f:Calibri,"Microsoft JhengHei","微軟正黑體",sans-serif}
+body.dark{--bg:#10151f;--panel:#182030;--inset:var(--inset);--line:#2b3850;--ink:#e8e4d8;--dim:#8d97aa;--yt:#d4b36a;--gt:#4fb3a5;--et:#c4504f}
+*{box-sizing:border-box}
+html,body,button,input,select{font-family:var(--f)}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.55;min-height:100vh}
+h1,h2,h3{margin:0;font-weight:700}
+.wrap{max-width:720px;margin:0 auto;padding:14px 12px 60px}
+.title{font-size:44px;font-weight:700;text-align:center;margin:40px 0 4px;letter-spacing:.2em}
+.sub{text-align:center;color:var(--dim);margin-bottom:28px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px}
+input[type=text],input[type=password],select{width:100%;padding:12px;background:var(--inset);border:1px solid var(--line);color:var(--ink);border-radius:4px;font-size:inherit;margin-bottom:10px}
+button{font-size:inherit;cursor:pointer;border:1px solid var(--gold);background:transparent;color:var(--yt);padding:10px 18px;border-radius:4px}
+button:hover:not(:disabled){background:var(--gold);color:#10151f}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,.p[role=button]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+button.solid{background:var(--gold);color:#10151f;font-weight:700}
+button.good{border-color:var(--good);color:var(--gt)}button.good:hover:not(:disabled){background:var(--good);color:#10151f}
+button.evil{border-color:var(--evil);color:var(--et)}button.evil:hover:not(:disabled){background:var(--evil);color:#fff}
+button.sm{padding:3px 10px;font-size:14px}button.mute{border-color:var(--line);color:var(--dim)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.head b{color:var(--yt);font-size:20px;letter-spacing:.15em}.head .me{color:var(--dim);font-size:15px}
+.head .rt{display:flex;gap:6px;align-items:center}
+.track{display:flex;gap:8px;justify-content:center;margin:6px 0 4px}
+.q{width:50px;height:50px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--dim);position:relative}
+.q.cur{border-color:var(--gold);color:var(--yt);box-shadow:0 0 0 4px rgba(212,179,106,.15)}
+.q.success{background:var(--good);border-color:var(--good);color:#10151f}
+.q.fail{background:var(--evil);border-color:var(--evil);color:#fff}
+.rejects{position:relative;text-align:center;color:var(--dim);font-size:15px;margin:12px 0}
+.idb{position:absolute;left:0;top:50%;transform:translateY(-50%);text-align:left;line-height:1.25;font-size:13px}
+.idb b{display:block;font-size:15px}.idb .g{color:var(--gt)}.idb .e{color:var(--et)}
+.idb button{padding:0 6px;font-size:13px;line-height:16px;margin-left:4px;color:var(--dim);border-color:var(--line)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--dim);margin:0 3px}.dot.on{background:var(--evil);border-color:var(--evil)}
+/* 玩家區：每列 5 位 */
+.players{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.p{position:relative;padding:6px 6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--inset);color:var(--ink);min-height:74px;overflow-wrap:anywhere}
+.p[role=button]{cursor:pointer}.p[role=button]:hover:not(.dis){background:rgba(212,179,106,.12)}
+.p.dis{opacity:.45;cursor:not-allowed}
+.p .ops{display:flex;justify-content:flex-end;gap:3px;min-height:20px;margin-bottom:2px}
+.p .ops button{font-size:11px;padding:0 5px;line-height:18px;border-radius:3px}
+.p .n{font-weight:700;font-size:15px;line-height:1.25}.p .t{font-size:12px;color:var(--dim);line-height:1.3}
+.p .vb{font-size:13px;font-weight:700;margin-top:2px}
+.p.off{opacity:.55}.p.leader{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.p.picked{background:rgba(212,179,106,.2)}
+.p.sees{border-left:4px solid var(--evil)}
+.zone .zt{font-weight:700;font-size:18px}.zone .zt .dim{font-size:14px;font-weight:400;margin-left:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{padding:4px 12px;border:1px solid var(--gold);border-radius:14px;color:var(--yt);font-weight:700}
+.chip.empty{border-style:dashed;color:var(--dim);border-color:var(--line)}
+.zone .st{text-align:center;color:var(--dim);margin:8px 0 2px}
+.zone .hint{font-size:14px;color:var(--dim);margin-top:6px}
+.dim{color:var(--dim)}
+.status{font-size:20px;font-weight:700;text-align:center;margin:8px 0}
+.sec{font-size:16px;color:var(--yt);margin-bottom:6px}
+.log{font-size:14px;color:var(--dim);max-height:150px;overflow:auto;padding-left:18px;margin:0}
+.banner{text-align:center;padding:18px;border-radius:6px;margin-bottom:12px}
+.banner.good{background:rgba(79,179,165,.15);border:1px solid var(--good)}.banner.evil{background:rgba(196,80,79,.15);border:1px solid var(--evil)}
+.banner h2{font-size:28px}
+.spec{background:rgba(141,151,170,.12);border:1px dashed var(--dim);text-align:center;padding:8px;border-radius:6px;margin-bottom:12px;color:var(--dim);font-size:15px}
+label.opt{display:flex;gap:10px;align-items:center;padding:5px 0}
+details.panel{padding:8px 12px}details>summary{cursor:pointer;color:var(--dim);font-size:15px}
+.testbar{border:1px dashed var(--gold);border-radius:6px;padding:10px;margin-bottom:12px;font-size:15px}
+.testbar .row{margin-top:6px}.testbar button{padding:4px 10px;font-size:14px}.testbar select{margin:0;padding:6px}
+/* 規則 */
+.rules{font-size:15px;color:var(--ink)}.rules h4{margin:14px 0 4px;color:var(--yt);font-size:16px}
+.rules p,.rules ul{margin:4px 0}.rules ul{padding-left:20px}
+.rules table{border-collapse:collapse;width:100%;font-size:14px;text-align:center}
+.rules th,.rules td{border:1px solid var(--line);padding:3px 4px}.rules th{color:var(--yt)}
+.tg{color:var(--gt)}.te{color:var(--et)}
+/* 留言區 */
+.msgs{height:180px;overflow:auto;font-size:15px;background:var(--inset);border:1px solid var(--line);border-radius:4px;padding:6px 8px;margin-bottom:8px}
+.msgs .m{margin:2px 0;overflow-wrap:anywhere}.msgs .m b{color:var(--yt)}.msgs .m.me b{color:var(--gt)}
+.chatrow{display:flex;gap:8px}.chatrow input{flex:1;margin:0}
+/* 彈出視窗 */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;z-index:20;padding:16px}
+.ov[hidden]{display:none}
+.mbox{background:var(--panel);border:1px solid var(--gold);border-radius:8px;max-width:460px;width:100%;padding:18px;max-height:85vh;overflow:auto}
+.mbox h3{font-size:22px;margin-bottom:8px}.mbox p{margin:6px 0}
+.mbox .row{margin-top:14px}
+.camp{display:inline-block;padding:1px 10px;border-radius:10px;font-size:14px;margin-left:8px;border:1px solid}
+.camp.good{color:var(--gt);border-color:var(--good)}.camp.evil{color:var(--et);border-color:var(--evil)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--evil);color:#fff;padding:10px 18px;border-radius:4px;display:none;z-index:30}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="app"></div>
+<div class="panel" id="chat" hidden><h3 class="sec">留言區</h3><div class="msgs" id="msgs"></div>
+<div class="chatrow"><input type="text" id="msg" maxlength="100" placeholder="輸入訊息，按 Enter 送出" autocomplete="off"><button class="solid" id="send">送出</button></div></div>
+<div id="rules"></div>
+</div>
+<div class="ov" id="ov" hidden></div>
+<div id="toast" role="alert"></div>
+<script>
+// ★ 部署 Apps Script 後，把「網頁應用程式網址」（結尾是 /exec）貼在這裡
+const API_URL = 'https://script.google.com/macros/s/xxxxxxxx/exec';
+const TEST = new URLSearchParams(location.search).get('test') === '1';   // 網址加 ?test=1 進入測試模式
+const $app = document.getElementById('app');
+const $ov = document.getElementById('ov');
+document.body.classList.toggle('dark', TEST);   // 測試模式深色、遊玩模式淺色
+let S = null, session = null, viewAs = null, busy = false, lastJson = '';
+let ovMode = null, confirmCb = null, specOpen = null;
+
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem('avalon2') || 'null'); } catch (e) { return null; } },
+  set(v) { try { v ? localStorage.setItem('avalon2', JSON.stringify(v)) : localStorage.removeItem('avalon2'); } catch (e) {} }
+};
+session = store.get();
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3000); };
+// 以純文字 POST 呼叫後端（不觸發跨網域預檢，Apps Script 可直接接受）
+const call = (action, payload) => API_URL.includes('xxxxxxxx')
+  ? Promise.resolve({ error: '尚未設定後端網址（請修改 index.html 的 API_URL）' })
+  : fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: payload }) })
+      .then((r) => r.json()).catch(() => ({ error: '連線失敗，請稍後再試' }));
+const base = () => ({ id: session && session.id, test: TEST, as: viewAs || undefined });
+
+function apply(state) {
+  if (viewAs && state.me !== viewAs) viewAs = null;
+  const j = JSON.stringify(state);
+  if (j === lastJson) return;
+  lastJson = j; S = state; render();
+}
+function logout(msg) { store.set(null); session = null; S = null; lastJson = ''; viewAs = null; closeOv(); if (msg) toast(msg); renderLogin(); }
+
+async function emit(a, d) {
+  if (busy) return;
+  busy = true;
+  const res = await call(a, Object.assign(base(), { data: d }));
+  busy = false;
+  if (res.error) { toast(res.error); if (/不在房間/.test(res.error)) logout(); return; }
+  if (a === 'leave') return logout();
+  if (res.state) apply(res.state);
+}
+async function enter(name, password) {
+  const res = await call('join', { name: name, password: password, test: TEST });
+  if (res.error) return toast(res.error);
+  session = { id: res.id }; store.set(session); apply(res.state); startPolling();
+}
+async function pollOnce() {
+  if (!session || busy) return;
+  const res = await call('poll', Object.assign(base(), { cs: cs }));
+  if (res.gone) return logout('你已不在房間內，請重新輸入暱稱進入。');
+  if (res.chat) showChat(res.chat);
+  if (res.state && !busy) apply(res.state);
+}
+let timer = null;
+function startPolling() { if (!timer) timer = setInterval(pollOnce, 2000); }
+
+// ---------- 留言區 ----------
+const $chat = document.getElementById('chat'), $msgs = document.getElementById('msgs'), $msg = document.getElementById('msg');
+let cs = 0, sending = false;
+function showChat(c) {
+  cs = c.seq;
+  const me = S ? nm(S.me) : '';
+  const bottom = $msgs.scrollHeight - $msgs.scrollTop - $msgs.clientHeight < 40;
+  $msgs.innerHTML = c.list.map((m) => `<div class="m${m.n === me ? ' me' : ''}"><b>${esc(m.n)}</b>　${esc(m.t)}</div>`).join('') || '<div class="dim">還沒有留言</div>';
+  if (bottom) $msgs.scrollTop = $msgs.scrollHeight;
+}
+async function sendChat() {
+  const text = $msg.value.trim();
+  if (!text || sending) return;
+  sending = true; $msg.value = '';
+  const res = await call('chat', Object.assign(base(), { text: text }));
+  sending = false;
+  if (res.gone) return logout('你已不在房間內，請重新輸入暱稱進入。');
+  if (res.error) return toast(res.error);
+  showChat(res.chat); $msgs.scrollTop = $msgs.scrollHeight;
+}
+document.getElementById('send').onclick = sendChat;
+$msg.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) sendChat(); };   // isComposing：避免中文輸入法選字時誤送出
+showChat({ seq: 0, list: [] });
+
+// ---------- 角色介紹與規則 ----------
+const RN = { merlin: '梅林', percival: '派西維爾', servant: '忠臣', assassin: '刺客', morgana: '莫甘娜', mordred: '莫德雷德', oberon: '奧伯倫', minion: '爪牙' };
+const RD = {
+  merlin: ['正義', '你知道邪惡陣營有誰（莫德雷德除外）。你要在不暴露自己的前提下，暗中引導好人完成任務。若好人完成三次任務，刺客會嘗試指認你，被刺中則邪惡陣營逆轉獲勝。'],
+  percival: ['正義', '你會看到兩位玩家，其中一位是梅林，另一位是莫甘娜，但你分不出誰是誰。請保護真正的梅林，並判斷誰在假扮。'],
+  servant: ['正義', '你沒有特殊能力，靠討論、投票紀錄與任務結果推理，協助好人完成三次任務。'],
+  assassin: ['邪惡', '你認識邪惡同伴（奧伯倫除外）。好人完成三次任務後，你有一次機會指認梅林，刺中即可逆轉勝。'],
+  morgana: ['邪惡', '你認識邪惡同伴（奧伯倫除外）。在派西維爾眼中，你和梅林看起來一樣，你可以假扮梅林來誤導他。'],
+  mordred: ['邪惡', '你認識邪惡同伴（奧伯倫除外）。梅林看不到你，所以你可以更安全地隱藏身分。'],
+  oberon: ['邪惡', '你不認識任何同伴，同伴也不認識你，但梅林看得到你。你需要自己判斷局勢並破壞任務。'],
+  minion: ['邪惡', '你認識邪惡同伴（奧伯倫除外），與同伴一起破壞任務，並設法保護刺客與掩護自己。']
+};
+
+function rulesHtml() {
+  return `<div class="rules">
+  <h4>遊戲目標</h4>
+  <p><span class="tg">正義陣營</span>：完成 3 次任務，並在刺客的刺殺中保住梅林。</p>
+  <p><span class="te">邪惡陣營</span>：讓 3 次任務失敗、連續 3 次提案被否決，或在好人完成任務後刺殺梅林。</p>
+  <h4>遊戲流程（最多 5 次任務）</h4>
+  <ul>
+    <li><b>選人發車</b>：隊長依座位順序輪流擔任，從玩家區點選要上車的人，人數符合後按「發車」。</li>
+    <li><b>投票</b>：所有玩家同時投贊成或反對，贊成票必須超過半數才通過，投完後全員同時公開結果。</li>
+    <li><b>否決</b>：換下一位隊長重新選人。連續 3 次被否決，邪惡陣營直接獲勝；任何一次通過就歸零。</li>
+    <li><b>執行任務</b>：上車的人秘密出牌。正義只能出「任務成功」，邪惡可出「任務成功」或「任務失敗」。</li>
+    <li><b>結算</b>：有 1 張失敗票任務就失敗；7 人以上的第 4 次任務，需要 2 張失敗票才算失敗。</li>
+    <li><b>刺殺</b>：好人先完成 3 次任務時，刺客指認梅林，刺中則邪惡獲勝。</li>
+  </ul>
+  <h4>人數配置</h4>
+  <table><tr><th>人數</th><th>正義</th><th>邪惡</th><th>各次任務上車人數</th></tr>
+  <tr><td>5</td><td>3</td><td>2</td><td>2 / 3 / 2 / 3 / 3</td></tr><tr><td>6</td><td>4</td><td>2</td><td>2 / 3 / 4 / 3 / 4</td></tr>
+  <tr><td>7</td><td>4</td><td>3</td><td>2 / 3 / 3 / 4 / 4</td></tr><tr><td>8</td><td>5</td><td>3</td><td>3 / 4 / 4 / 5 / 5</td></tr>
+  <tr><td>9</td><td>6</td><td>3</td><td>3 / 4 / 4 / 5 / 5</td></tr><tr><td>10</td><td>6</td><td>4</td><td>3 / 4 / 4 / 5 / 5</td></tr></table>
+  <h4>角色介紹</h4>
+  <p>固定角色：梅林、派西維爾、莫甘娜、刺客，其餘為忠臣。7 人以上，房主可加入莫德雷德、奧伯倫、爪牙（數量不超過邪惡空位，未選滿自動補爪牙）與湖中女神。</p>
+  <ul>${Object.keys(RD).map((k) => `<li><b class="${RD[k][0] === '正義' ? 'tg' : 'te'}">${RN[k]}</b>（${RD[k][0]}）${RD[k][1]}</li>`).join('')}</ul>
+  <h4>湖中女神（7 人以上可選）</h4>
+  <p>第 2、3、4 次任務結束後，持有令牌的人可查驗一位玩家是正義或邪惡，只有持有者看得到結果，之後令牌交給被查驗的人。曾持有過令牌的人不能被查驗。第一位持有者是第一任隊長右手邊的玩家。</p>
+  <h4>房間規則</h4>
+  <ul>
+    <li>最先進入的前 10 位是玩家，之後進入的是觀戰者，觀戰者只能看到公開資訊。每局結束後，才會依進入順序重新分配玩家與觀戰者。</li>
+    <li>每局開始時座位順序隨機排定，玩家區由左至右就是發車順序，第一位是第一任隊長。</li>
+    <li>遊戲中有人離開或被房主移出，系統會代打該位置：自動贊成、自動出任務成功。</li>
+    <li>房主可以指定其他人接任房主，也可以移除玩家。</li>
+  </ul></div>`;
+}
+document.getElementById('rules').innerHTML = `<details class="panel"><summary>遊戲規則</summary>${rulesHtml()}</details>`;
+
+// ---------- 彈出視窗 ----------
+function ask(title, msg, ok, label) {
+  ovMode = 'confirm'; confirmCb = ok;
+  $ov.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><h3>${title}</h3><p>${msg}</p>
+    <div class="row"><button data-m="close">取消</button><button class="solid" data-m="yes">${label || '確定'}</button></div></div>`;
+  $ov.hidden = false;
+  const y = $ov.querySelector('[data-m=yes]'); if (y) y.focus();
+}
+function closeOv() { ovMode = null; confirmCb = null; $ov.hidden = true; $ov.innerHTML = ''; }
+function syncOv() {
+  if (ovMode !== 'role') return;
+  const I = S && S.info;
+  if (!I) return closeOv();
+  const rd = RD[I.role];
+  const sees = I.sees.length ? `<p><b>你看到的人：</b>${I.sees.map((x) => `${esc(nm(x.id))}（${x.tag}）`).join('、')}</p>` : '';
+  const lake = I.lakeKnown.length ? `<p><b>湖中女神結果：</b>${I.lakeKnown.map((x) => `${esc(nm(x.id))} 是<b style="color:${x.evil ? 'var(--et)' : 'var(--gt)'}">${x.evil ? '邪惡' : '正義'}</b>`).join('、')}</p>` : '';
+  $ov.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><h3>${I.roleName}<span class="camp ${I.evil ? 'evil' : 'good'}">${rd[0]}陣營</span></h3>
+    <p>${rd[1]}</p>${sees}${lake}<div class="row"><button class="solid" data-m="close">關閉</button></div></div>`;
+  $ov.hidden = false;
+}
+$ov.addEventListener('click', (e) => {
+  const m = e.target.dataset.m;
+  if (e.target === $ov || m === 'close') return closeOv();
+  if (m === 'yes') { const cb = confirmCb; closeOv(); if (cb) cb(); }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ovMode) closeOv(); });
+
+// ---------- 畫面元件 ----------
+function renderLogin() {
+  $app.innerHTML = `<div class="title">阿瓦隆</div><div class="sub">5 至 10 人・線上推理對局${TEST ? '（測試模式）' : ''}</div>
+    <div class="panel"><input type="text" id="name" maxlength="12" placeholder="暱稱" autocomplete="off">
+    <input type="password" id="pw" placeholder="房間密碼" autocomplete="current-password">
+    <button class="solid" style="width:100%" id="go">進入遊戲</button></div>`;
+  $chat.hidden = true;
+  const go = () => enter(document.getElementById('name').value, document.getElementById('pw').value);
+  document.getElementById('go').onclick = go;
+  ['name', 'pw'].forEach((id) => { document.getElementById(id).onkeydown = (e) => { if (e.key === 'Enter') go(); }; });
+}
+
+const all = () => S.players.concat(S.spectators);
+const nm = (id) => (all().find((p) => p.id === id) || {}).name || '?';
+const isHost = () => S.hostId === S.me;
+const isLeader = () => S.leader === S.me;
+
+function tags(p) {
+  const t = [];
+  if (p.id === S.hostId) t.push('房主');
+  if (p.id === S.leader) t.push('隊長');
+  if (S.lake && p.id === S.lake.holder) t.push('湖中女神');
+  if (p.id === S.me) t.push('你');
+  if (p.left) t.push('已退出'); else if (!p.online) t.push('離線');
+  return t.join('・');
+}
+
+function header() {
+  const abort = isHost() && S.phase !== 'lobby' && S.phase !== 'end' ? `<button class="sm evil" data-a="abort">結束本局回到大廳</button>` : '';
+  return `<div class="head"><span><b>阿瓦隆</b>　<span class="me">${esc(nm(S.me))}${S.spectator ? '（觀戰者）' : ''}</span></span>
+    <span class="rt"><button class="sm mute" data-a="leave">離開</button>${abort}</span></div>`;
+}
+
+function testBar() {
+  const mine = all().filter((p) => p.fake || p.id === session.id);
+  const opts = mine.map((p) => `<option value="${p.id}" ${p.id === S.me ? 'selected' : ''}>${esc(p.name)}${p.id === session.id ? '（我）' : ''}</option>`).join('');
+  return `<div class="testbar"><b>測試模式</b>　目前操作視角：<select id="viewAs">${opts}</select>
+    <div class="row"><button data-a="addBot">＋假玩家</button><button data-a="fillBots" data-d="5">補到 5 人</button>
+      <button data-a="fillBots" data-d="7">補到 7 人</button><button data-a="fillBots" data-d="10">補到 10 人</button>
+      <button data-a="fillBots" data-d="12">補到 12 人</button><button data-a="clearBots">清除假玩家</button>
+      <button class="solid" data-a="jump" ${S.pending && S.pending.length ? '' : 'disabled'}>跳到待行動者</button></div></div>`;
+}
+
+function track() {
+  if (!S.sizes) return '';
+  const q = S.sizes.map((n, i) => {
+    const cur = S.phase !== 'end' && S.phase !== 'assassin' && i === S.round;
+    return `<div class="q ${S.results[i] || ''} ${cur ? 'cur' : ''}">${n}</div>`;
+  }).join('');
+  const dots = [0, 1, 2].map((i) => `<span class="dot ${i < S.rejects ? 'on' : ''}"></span>`).join('');
+  const I = S.info;
+  const idb = I ? `<div class="idb"><b class="${I.evil ? 'e' : 'g'}">${I.roleName}</b>${I.evil ? '邪惡' : '正義'}陣營<button data-a="role" title="查看身分說明" aria-label="查看身分說明">⋯</button></div>` : '';
+  return `<div class="track">${q}</div><div class="rejects">${idb}連續否決 ${dots}</div>`;
+}
+
+// 玩家區：每列 5 位，順序即發車順序
+function grid(o, list) {
+  o = o || {};
+  const seen = {}; if (S.info) S.info.sees.forEach((x) => (seen[x.id] = x.tag));
+  const showVotes = S.lastVote && S.phase !== 'vote' && S.phase !== 'lobby';
+  return `<div class="players">` + (list || S.players).map((p) => {
+    const cls = ['p', p.online || p.fake || p.left ? '' : 'off', p.id === S.leader ? 'leader' : '', S.team.includes(p.id) && S.phase !== 'lobby' ? 'picked' : '',
+      S.info && S.info.evil && seen[p.id] ? 'sees' : '', o.click && o.dis && o.dis(p) ? 'dis' : ''].join(' ');
+    let vb = '';
+    if (S.phase === 'vote') vb = S.voted.includes(p.id) ? '<div class="vb dim">已投票</div>' : '';
+    else if (showVotes && S.lastVote.votes[p.id]) { const ok = S.lastVote.votes[p.id] === 'approve'; vb = `<div class="vb" style="color:${ok ? 'var(--gt)' : 'var(--et)'}">${ok ? '贊成' : '反對'}</div>`; }
+    const ops = isHost() && p.id !== S.me
+      ? `<div class="ops"><button data-a="setHost" data-d="${p.id}" data-n="${esc(p.name)}" title="指定為房主">房主</button><button class="evil" data-a="kick" data-d="${p.id}" data-n="${esc(p.name)}" title="移除玩家">移除</button></div>`
+      : (isHost() ? '<div class="ops"></div>' : '');
+    const attrs = o.click ? `role="button" tabindex="0" data-a="${o.click}" data-d="${p.id}"` : '';
+    return `<div class="${cls}" ${attrs}>${ops}<div class="n">${esc(p.name)}</div><div class="t">${tags(p)}</div>${vb}</div>`;
+  }).join('') + `</div>`;
+}
+
+// 發車區：顯示隊長選的人、投票與任務出牌
+function zone() {
+  const ph = S.phase, size = S.sizes[S.round], act = !S.spectator;
+  const need2 = S.round === 3 && S.players.length >= 7;
+  const chips = () => {
+    const c = S.team.map((id) => `<span class="chip">${esc(nm(id))}</span>`);
+    for (let i = S.team.length; i < size; i++) c.push('<span class="chip empty">?</span>');
+    return `<div class="chips">${c.join('')}</div>`;
+  };
+  let h = `<div class="panel zone"><div class="zt">第 ${S.round + 1} 次任務<span class="dim">隊長：${esc(nm(S.leader))}・上車 ${size} 人${need2 ? '・需 2 張失敗票才失敗' : ''}</span></div>`;
+  if (ph === 'team') {
+    h += chips();
+    if (isLeader()) h += `<button class="solid" style="width:100%" data-a="submitTeam" ${S.team.length !== size ? 'disabled' : ''}>發車（${S.team.length}/${size}）</button><div class="hint">點下方玩家框選擇或取消上車的人。</div>`;
+    else h += `<div class="st">等待 ${esc(nm(S.leader))} 選擇上車的人…</div>`;
+    const v = S.lastVote;
+    if (v) h += `<div class="hint">上一次提案：${esc(nm(v.leader))} 提名 ${v.team.map((i) => esc(nm(i))).join('、')}，${v.approved ? '通過' : '被否決'}。</div>`;
+  } else if (ph === 'vote') {
+    h += chips();
+    if (act && !S.myVote) h += `<div class="row"><button class="good" data-a="vote" data-d="approve">贊成</button><button class="evil" data-a="vote" data-d="reject">反對</button></div>`;
+    else h += `<div class="st">${act ? '你已投票，' : ''}等待其他人投票（${S.voted.length}/${S.players.length}）</div>`;
+  } else if (ph === 'quest') {
+    h += chips();
+    if (S.onQuest && !S.myCard) {
+      const ev = S.info.evil;
+      h += `<div class="row"><button class="good" data-a="card" data-d="success">任務成功</button><button class="evil" data-a="card" data-d="fail" ${ev ? '' : 'disabled'}>任務失敗</button></div>`;
+      if (!ev) h += `<div class="hint">正義陣營只能出「任務成功」。</div>`;
+    } else h += `<div class="st">${S.onQuest ? '你已出牌，' : ''}等待上車的人出牌（${S.cardDone.length}/${S.team.length}）</div>`;
+  } else if (ph === 'lake') {
+    const mine = act && S.lake.holder === S.me;
+    h += `<div class="st">${mine ? '湖中女神：請在下方玩家區選擇一位玩家查驗陣營' : `等待 ${esc(nm(S.lake.holder))} 使用湖中女神…`}</div>${mine ? '<div class="hint">曾持有令牌的玩家不能被查驗。</div>' : ''}`;
+  } else if (ph === 'assassin') {
+    const amAss = S.info && S.info.role === 'assassin';
+    h += `<div class="st">${amAss ? '刺客，請在下方玩家區選擇你認為是梅林的人' : '正義完成三次任務！等待刺客行動…'}</div>`;
+  }
+  return h + `</div>`;
+}
+
+function specList() {
+  if (!S.spectators.length) return '';
+  const open = specOpen === null ? S.phase === 'lobby' : specOpen;
+  return `<details class="panel" data-spec ${open ? 'open' : ''}><summary>觀戰者（${S.spectators.length}）</summary><div style="margin-top:8px">${grid({}, S.spectators)}</div></details>`;
+}
+
+const logBox = () => `<div class="panel"><h3 class="sec">遊戲歷程</h3><ul class="log">${S.log.slice().reverse().map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`;
+
+// ---------- 主畫面 ----------
+function render() {
+  if (!S) return renderLogin();
+  $chat.hidden = false;
+  let h = header() + (TEST ? testBar() : '');
+  const ph = S.phase;
+
+  if (ph === 'lobby') {
+    const o = S.opts, sel = ['mordred', 'oberon', 'minion'].filter((k) => o[k]).length, can7 = S.n >= 7;
+    h += `<div class="panel"><h3 class="sec">玩家（${S.players.length}/10）</h3>${grid()}</div>${specList()}`;
+    h += `<div class="panel"><h3 class="sec">角色設定</h3>
+      <div class="dim" style="font-size:15px;margin-bottom:6px">固定角色：梅林、派西維爾、莫甘娜、刺客，其餘為忠臣。</div>
+      ${can7 ? `<div class="dim" style="font-size:15px">邪惡選填（最多 ${S.slots} 個，未選滿自動補爪牙）：</div>` +
+        [['mordred', '莫德雷德（梅林看不到）'], ['oberon', '奧伯倫（不認識同伴）'], ['minion', '爪牙']].map(([k, t]) => `<label class="opt"><input type="checkbox" data-opt="${k}" ${o[k] ? 'checked' : ''} ${!isHost() || (!o[k] && sel >= S.slots) ? 'disabled' : ''}>${t}</label>`).join('') +
+        `<label class="opt"><input type="checkbox" data-opt="lake" ${o.lake ? 'checked' : ''} ${!isHost() ? 'disabled' : ''}>湖中女神</label>`
+        : `<div class="dim" style="font-size:15px">7 人以上才能選填莫德雷德、奧伯倫、爪牙與湖中女神。</div>`}</div>`;
+    h += isHost()
+      ? `<button class="solid" style="width:100%;margin-bottom:12px" data-a="start" ${S.n < 5 ? 'disabled' : ''}>${S.n < 5 ? `還需要 ${5 - S.n} 位玩家` : '開始遊戲'}</button>`
+      : `<div class="status dim">等待房主 ${esc(nm(S.hostId))} 開始遊戲</div>`;
+    $app.innerHTML = h; syncOv(); return;
+  }
+
+  h += track();
+
+  if (ph === 'end') {
+    h += `<div class="banner ${S.winner}"><h2>${S.winner === 'good' ? '正義陣營獲勝' : '邪惡陣營獲勝'}</h2><p>${esc(S.reason)}</p></div>`;
+    h += `<div class="panel"><h3 class="sec">身分揭曉</h3><div class="players">${S.reveal.map((r) => `<div class="p ${r.evil ? 'sees' : ''}"><div class="n">${esc(nm(r.id))}</div><div class="t" style="color:${r.evil ? 'var(--et)' : 'var(--gt)'}">${r.role}</div></div>`).join('')}</div></div>`;
+    h += isHost() ? `<button class="solid" style="width:100%;margin-bottom:12px" data-a="restart">回大廳準備下一局</button>` : `<div class="status dim">等待房主開始下一局</div>`;
+    $app.innerHTML = h + specList() + logBox(); syncOv(); return;
+  }
+
+  if (S.spectator) h += `<div class="spec">你是觀戰者，只能看到公開資訊。下一局開始時會依進入順序重新分配玩家與觀戰者。</div>`;
+  h += zone();
+  const click = ph === 'team' && isLeader() ? 'toggleMember'
+    : ph === 'lake' && !S.spectator && S.lake.holder === S.me ? 'lake'
+    : ph === 'assassin' && S.info && S.info.role === 'assassin' ? 'assassinate' : null;
+  h += grid({ click: click, dis: (p) => (click === 'lake' ? S.lake.used.includes(p.id) : click === 'assassinate' ? p.id === S.me : false) });
+  $app.innerHTML = h + specList() + logBox();
+  syncOv();
+}
+
+// ---------- 事件（統一委派） ----------
+function activate(b) {
+  if (!b || b.disabled || b.classList.contains('dis')) return;
+  const a = b.dataset.a, d = b.dataset.d, n = b.dataset.n;
+  if (a === 'role') { ovMode = 'role'; return syncOv(); }
+  if (a === 'jump') { const t = S.pending[0]; viewAs = t === session.id ? null : t; lastJson = ''; return pollOnce(); }
+  if (a === 'leave') return ask('離開遊戲', '確定要離開嗎？' + (S.phase !== 'lobby' && !S.spectator ? '遊戲進行中離開，系統會自動代打你的位置（自動贊成、自動出任務成功）。' : ''), () => emit('leave'), '離開');
+  if (a === 'kick') return ask('移除玩家', `確定要移除「${esc(n)}」嗎？他會回到暱稱頁面。` + (S.phase !== 'lobby' ? '遊戲進行中，系統會自動代打他的位置（自動贊成、自動出任務成功）。' : ''), () => emit('kick', d), '移除');
+  if (a === 'setHost') return ask('指定房主', `確定將房主交給「${esc(n)}」嗎？你將失去房主權限。`, () => emit('setHost', d), '指定');
+  if (a === 'abort') return ask('結束本局', '確定要結束本局並回到大廳嗎？目前進度會消失。', () => emit('abort'), '結束本局');
+  if (a === 'assassinate') return ask('刺殺梅林', `確定刺殺「${esc(nm(d))}」嗎？`, () => emit('assassinate', d), '刺殺');
+  emit(a, d);
+}
+$app.addEventListener('click', (e) => activate(e.target.closest('[data-a]')));
+$app.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.p[role=button]')) { e.preventDefault(); activate(e.target); }
+});
+$app.addEventListener('change', (e) => {
+  if (e.target.matches('[data-opt]')) {
+    const o = {}; $app.querySelectorAll('[data-opt]').forEach((x) => (o[x.dataset.opt] = x.checked)); emit('opts', o);
+  } else if (e.target.id === 'viewAs') {
+    viewAs = e.target.value === session.id ? null : e.target.value; lastJson = ''; pollOnce();
+  }
+});
+$app.addEventListener('toggle', (e) => {
+  if (e.target.matches('[data-spec]')) specOpen = e.target.open;
+}, true);
+
+// ---------- 啟動 ----------
+if (session) { startPolling(); pollOnce().then(() => { if (!S) renderLogin(); }); } else renderLogin();
+</script>
+</body>
+</html>
