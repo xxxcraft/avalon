@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>阿瓦隆・線上對局</title>
+<title>阿瓦隆 Avalon</title>
 <style>
-/* 英文與數字使用 Calibri，中文使用微軟正黑體（Calibri 沒有中文字，會自動接用後面的字型） */
 :root{--bg:#f4efe3;--panel:#fffcf5;--inset:#f8f4ea;--line:#d8cfba;--ink:#1f2633;--dim:#6a7285;--gold:#d4b36a;--good:#4fb3a5;--evil:#c4504f;--yt:#8a6a1f;--gt:#1f7a6e;--et:#b03a39;--f:Calibri,"Microsoft JhengHei","微軟正黑體",sans-serif}
 body.dark{--bg:#10151f;--panel:#182030;--inset:var(--inset);--line:#2b3850;--ink:#e8e4d8;--dim:#8d97aa;--yt:#d4b36a;--gt:#4fb3a5;--et:#c4504f}
 *{box-sizing:border-box}
@@ -13,7 +12,7 @@ html,body,button,input,select{font-family:var(--f)}
 body{margin:0;background:var(--bg);color:var(--ink);font-size:17px;line-height:1.55;min-height:100vh}
 h1,h2,h3{margin:0;font-weight:700}
 .wrap{max-width:720px;margin:0 auto;padding:14px 12px 60px}
-.title{font-size:44px;font-weight:700;text-align:center;margin:40px 0 4px;letter-spacing:.2em}
+.title{font-size:44px;font-weight:700;text-align:center;margin:40px 0 4px}
 .sub{text-align:center;color:var(--dim);margin-bottom:28px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px}
 input[type=text],input[type=password],select{width:100%;padding:12px;background:var(--inset);border:1px solid var(--line);color:var(--ink);border-radius:4px;font-size:inherit;margin-bottom:10px}
@@ -27,7 +26,7 @@ button.evil{border-color:var(--evil);color:var(--et)}button.evil:hover:not(:disa
 button.sm{padding:3px 10px;font-size:14px}button.mute{border-color:var(--line);color:var(--dim)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
 .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
-.head b{color:var(--yt);font-size:20px;letter-spacing:.15em}.head .me{color:var(--dim);font-size:15px}
+.head b{color:var(--yt);font-size:20px}.head .me{color:var(--dim);font-size:15px}
 .head .rt{display:flex;gap:6px;align-items:center}
 .track{display:flex;gap:8px;justify-content:center;margin:6px 0 4px}
 .q{width:50px;height:50px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--dim);position:relative}
@@ -221,7 +220,7 @@ function rulesHtml() {
   <ul>
     <li>最先進入的前 10 位是玩家，之後進入的是觀戰者，觀戰者只能看到公開資訊。每局結束後，才會依進入順序重新分配玩家與觀戰者。</li>
     <li>每局開始時座位順序隨機排定，玩家區由左至右就是發車順序，第一位是第一任隊長。</li>
-    <li>遊戲中有人離開或被房主移出，系統會代打該位置：自動贊成、自動出任務成功。</li>
+    <li>遊戲中有人離開、被房主移出，或離線超過 5 分鐘，系統會代打該位置：自動贊成、自動出任務成功。</li>
     <li>房主可以指定其他人接任房主，也可以移除玩家。</li>
   </ul></div>`;
 }
@@ -256,7 +255,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ovMode) 
 
 // ---------- 畫面元件 ----------
 function renderLogin() {
-  $app.innerHTML = `<div class="title">阿瓦隆</div><div class="sub">5 至 10 人・線上推理對局${TEST ? '（測試模式）' : ''}</div>
+  $app.innerHTML = `<div class="title">阿瓦隆 Avalon</div><div class="sub">遊戲人數5-10人${TEST ? '（測試模式）' : ''}</div>
     <div class="panel"><input type="text" id="name" maxlength="12" placeholder="暱稱" autocomplete="off">
     <input type="password" id="pw" placeholder="房間密碼" autocomplete="current-password">
     <button class="solid" style="width:100%" id="go">進入遊戲</button></div>`;
