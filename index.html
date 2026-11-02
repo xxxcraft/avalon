@@ -147,6 +147,7 @@ const call = (action, payload) => API_URL.includes('xxxxxxxx')
 const base = () => ({ id: session && session.id, test: TEST, as: viewAs || undefined });
 
 function apply(state) {
+  if (S && state.me === S.me && state.v < S.v) return;      // 比目前畫面更舊的回應，丟掉
   if (viewAs && state.me !== viewAs) viewAs = null;
   const j = JSON.stringify(state);
   if (j === lastJson) return;
@@ -158,10 +159,12 @@ function logout(msg) { store.set(null); session = null; S = null; lastJson = '';
 async function emit(a, d) {
   if (busy) return;
   busy = true;
+  const as = viewAs;
   const res = await call(a, Object.assign(base(), { data: d }));
   busy = false;
   if (res.error) { toast(res.error); if (/不在房間/.test(res.error)) logout(); return; }
   if (a === 'leave') return logout();
+  if (as !== viewAs) return pollOnce();      // 操作期間切換了視角：丟掉舊視角的回應，改抓新視角
   if (res.state) apply(res.state);
 }
 async function enter(name, password) {
@@ -171,10 +174,11 @@ async function enter(name, password) {
 }
 async function pollOnce() {
   if (!session || busy) return;
+  const as = viewAs;
   const res = await call('poll', Object.assign(base(), { cs: cs }));
   if (res.gone) return logout('你已不在房間內，請重新輸入暱稱進入。');
   if (res.chat) showChat(res.chat);
-  if (res.state && !busy) apply(res.state);
+  if (res.state && !busy && as === viewAs) apply(res.state);
 }
 let timer = null;
 function startPolling() { if (!timer) timer = setInterval(pollOnce, 2000); }
