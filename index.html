@@ -124,7 +124,7 @@ details.panel{padding:8px 12px}details>summary{cursor:pointer;color:var(--dim);f
 <script>
 // ★ 部署 Apps Script 後，把「網頁應用程式網址」（結尾是 /exec）貼在這裡
 const API_URL = 'https://script.google.com/macros/s/AKfycbyy-L_SvFXpE8tcUg0GKMV05kjmYvD3ExePTSOjL0FsC4fVk_vyFYQOV8Y8qdVkCSdPQA/exec';
-// const TEST = new URLSearchParams(location.search).get('test') === '1';   // 網址加 ?test=1 進入測試模式
+const TEST = new URLSearchParams(location.search).get('test') === '1';   // 網址加 ?test=1 進入測試模式
 const $app = document.getElementById('app');
 const $ov = document.getElementById('ov');
 document.body.classList.toggle('dark', TEST);   // 測試模式深色、遊玩模式淺色
