@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>阿瓦隆 Avalon</title>
+<title>阿瓦隆・線上對局</title>
 <style>
+/* 英文與數字使用 Calibri，中文使用微軟正黑體（Calibri 沒有中文字，會自動接用後面的字型） */
 :root{--bg:#f4efe3;--panel:#fffcf5;--inset:#f8f4ea;--line:#d8cfba;--ink:#1f2633;--dim:#6a7285;--gold:#d4b36a;--good:#4fb3a5;--evil:#c4504f;--yt:#8a6a1f;--gt:#1f7a6e;--et:#b03a39;--f:Calibri,"Microsoft JhengHei","微軟正黑體",sans-serif}
 body.dark{--bg:#10151f;--panel:#182030;--inset:var(--inset);--line:#2b3850;--ink:#e8e4d8;--dim:#8d97aa;--yt:#d4b36a;--gt:#4fb3a5;--et:#c4504f}
 *{box-sizing:border-box}
@@ -68,6 +69,26 @@ label.opt{display:flex;gap:10px;align-items:center;padding:5px 0}
 details.panel{padding:8px 12px}details>summary{cursor:pointer;color:var(--dim);font-size:15px}
 .testbar{border:1px dashed var(--gold);border-radius:6px;padding:10px;margin-bottom:12px;font-size:15px}
 .testbar .row{margin-top:6px}.testbar button{padding:4px 10px;font-size:14px}.testbar select{margin:0;padding:6px}
+/* 身分牌 */
+.pc{min-width:0}
+.pc .ops{display:flex;justify-content:flex-end;gap:3px;min-height:20px}
+.pc .ops button{font-size:11px;padding:0 5px;line-height:18px;border-radius:3px}
+.pc .n{font-weight:700;font-size:14px;line-height:1.25;margin:2px 0 3px;overflow-wrap:anywhere}
+.pc.me .n{color:var(--gt)}
+.pc[role=button]{cursor:pointer}.pc.dis{opacity:.45;cursor:not-allowed}
+.pc.off .card{opacity:.55}
+.pc.leader .card{box-shadow:0 0 0 2px var(--gold)}
+.pc.picked .card{box-shadow:0 0 0 3px var(--gold),0 0 12px rgba(212,179,106,.6)}
+.card{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:#59627a;border:1px solid var(--line)}
+.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none}
+.card .cn{display:none;position:absolute;inset:0;place-items:center;text-align:center;color:#fff;font-weight:700;font-size:13px;padding:4px}
+.card.noimg .cn{display:grid}
+.card.k-merlin,.card.k-percival,.card.k-servant{background:#2f7d73}
+.card.k-assassin,.card.k-morgana,.card.k-mordred,.card.k-oberon,.card.k-minion,.card.k-back_evil{background:#9a3b3a}
+.card.k-back_mm{background:#6b5b95}
+.band{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;justify-content:center;gap:0 4px;padding:2px;background:rgba(0,0,0,.62);color:#fff;font-size:11px;line-height:1.3;text-align:center}
+.band:empty{display:none}.band .bg{color:#8fe3d6}.band .be{color:#ff9d9b}
+.rolehead{display:flex;gap:14px;align-items:flex-start}.rolehead .card{width:100px;flex:none}
 /* 規則 */
 .rules{font-size:15px;color:var(--ink)}.rules h4{margin:14px 0 4px;color:var(--yt);font-size:16px}
 .rules p,.rules ul{margin:4px 0}.rules ul{padding-left:20px}
@@ -84,6 +105,7 @@ details.panel{padding:8px 12px}details>summary{cursor:pointer;color:var(--dim);f
 .mbox{background:var(--panel);border:1px solid var(--gold);border-radius:8px;max-width:460px;width:100%;padding:18px;max-height:85vh;overflow:auto}
 .mbox h3{font-size:22px;margin-bottom:8px}.mbox p{margin:6px 0}
 .mbox .row{margin-top:14px}
+.mrow{display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}.mrow span{flex:1;overflow-wrap:anywhere}
 .camp{display:inline-block;padding:1px 10px;border-radius:10px;font-size:14px;margin-left:8px;border:1px solid}
 .camp.good{color:var(--gt);border-color:var(--good)}.camp.evil{color:var(--et);border-color:var(--evil)}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--evil);color:#fff;padding:10px 18px;border-radius:4px;display:none;z-index:30}
@@ -100,13 +122,13 @@ details.panel{padding:8px 12px}details>summary{cursor:pointer;color:var(--dim);f
 <div id="toast" role="alert"></div>
 <script>
 // ★ 部署 Apps Script 後，把「網頁應用程式網址」（結尾是 /exec）貼在這裡
-const API_URL = 'https://script.google.com/macros/s/AKfycbyy-L_SvFXpE8tcUg0GKMV05kjmYvD3ExePTSOjL0FsC4fVk_vyFYQOV8Y8qdVkCSdPQA/exec';
+const API_URL = 'https://script.google.com/macros/s/xxxxxxxx/exec';
 const TEST = new URLSearchParams(location.search).get('test') === '1';   // 網址加 ?test=1 進入測試模式
 const $app = document.getElementById('app');
 const $ov = document.getElementById('ov');
 document.body.classList.toggle('dark', TEST);   // 測試模式深色、遊玩模式淺色
 let S = null, session = null, viewAs = null, busy = false, lastJson = '';
-let ovMode = null, confirmCb = null, specOpen = null;
+let ovMode = null, confirmCb = null, backMode = null, specOpen = null, showSelf = false;
 
 const store = {
   get() { try { return JSON.parse(localStorage.getItem('avalon2') || 'null'); } catch (e) { return null; } },
@@ -127,6 +149,7 @@ function apply(state) {
   if (viewAs && state.me !== viewAs) viewAs = null;
   const j = JSON.stringify(state);
   if (j === lastJson) return;
+  if (!S || S.me !== state.me || (S.phase === 'lobby') !== (state.phase === 'lobby')) showSelf = false;   // 換局、換視角時蓋回自己的牌
   lastJson = j; S = state; render();
 }
 function logout(msg) { store.set(null); session = null; S = null; lastJson = ''; viewAs = null; closeOv(); if (msg) toast(msg); renderLogin(); }
@@ -154,6 +177,18 @@ async function pollOnce() {
 }
 let timer = null;
 function startPolling() { if (!timer) timer = setInterval(pollOnce, 2000); }
+
+// ---------- 牌面圖片（放在 index.html 同層的 images 資料夾） ----------
+const IMG_DIR = 'images/', IMG_EXT = 'webp', IMG_VER = '1';   // 換圖後把 IMG_VER 改成 2、3…，避免瀏覽器沿用舊圖
+const KEYNAME = { merlin: '梅林', percival: '派西維爾', servant: '忠臣', assassin: '刺客', morgana: '莫甘娜', mordred: '莫德雷德', oberon: '奧伯倫', minion: '爪牙', back: '牌背', back_evil: '邪惡', back_mm: '梅林／莫甘娜' };
+const imgSrc = (k) => `${IMG_DIR}${k}.${IMG_EXT}?v=${IMG_VER}`;
+const badImg = {};                                                   // 載入失敗的圖，不再重複請求，改顯示文字牌
+setTimeout(() => Object.keys(KEYNAME).forEach((k) => { const i = new Image(); i.onerror = () => (badImg[k] = 1); i.src = imgSrc(k); }), 0);
+function imgBad(el, k) { badImg[k] = 1; el.parentNode.classList.add('noimg'); }
+function cardHtml(key, band) {
+  const img = badImg[key] ? '' : `<img src="${imgSrc(key)}" alt="" draggable="false" onerror="imgBad(this,'${key}')">`;
+  return `<div class="card k-${key} ${badImg[key] ? 'noimg' : ''}" role="img" aria-label="${KEYNAME[key]}">${img}<span class="cn">${KEYNAME[key]}</span><div class="band">${band || ''}</div></div>`;
+}
 
 // ---------- 留言區 ----------
 const $chat = document.getElementById('chat'), $msgs = document.getElementById('msgs'), $msg = document.getElementById('msg');
@@ -220,7 +255,8 @@ function rulesHtml() {
   <ul>
     <li>最先進入的前 10 位是玩家，之後進入的是觀戰者，觀戰者只能看到公開資訊。每局結束後，才會依進入順序重新分配玩家與觀戰者。</li>
     <li>每局開始時座位順序隨機排定，玩家區由左至右就是發車順序，第一位是第一任隊長。</li>
-    <li>遊戲中有人離開、被房主移出，或離線超過 5 分鐘，系統會代打該位置：自動贊成、自動出任務成功。</li>
+    <li>遊戲中有人離開、被房主移出，或斷線超過 5 分鐘，系統會代打該位置：自動贊成、自動出任務成功。</li>
+    <li>玩家區是身分牌：自己的牌預設蓋著，按「翻牌」查看；你已知陣營的人會顯示對應的牌背，其餘為一般牌背。</li>
     <li>房主可以指定其他人接任房主，也可以移除玩家。</li>
   </ul></div>`;
 }
@@ -228,34 +264,51 @@ document.getElementById('rules').innerHTML = `<details class="panel"><summary>�
 
 // ---------- 彈出視窗 ----------
 function ask(title, msg, ok, label) {
+  backMode = ovMode === 'manage' ? 'manage' : null;   // 從房主管理開啟的確認視窗，取消後回到管理視窗
   ovMode = 'confirm'; confirmCb = ok;
   $ov.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><h3>${title}</h3><p>${msg}</p>
     <div class="row"><button data-m="close">取消</button><button class="solid" data-m="yes">${label || '確定'}</button></div></div>`;
   $ov.hidden = false;
   const y = $ov.querySelector('[data-m=yes]'); if (y) y.focus();
 }
-function closeOv() { ovMode = null; confirmCb = null; $ov.hidden = true; $ov.innerHTML = ''; }
+function closeOv() { ovMode = null; confirmCb = null; backMode = null; $ov.hidden = true; $ov.innerHTML = ''; }
 function syncOv() {
+  if (ovMode === 'manage') {
+    if (!S || !isHost()) return closeOv();
+    const row = (p) => `<div class="mrow"><span>${esc(p.name)} <small class="dim">${tags(p)}</small></span>
+      <button class="sm" data-a="setHost" data-d="${p.id}" data-n="${esc(p.name)}">指定房主</button><button class="sm evil" data-a="kick" data-d="${p.id}" data-n="${esc(p.name)}">移除</button></div>`;
+    const ps = S.players.filter((p) => p.id !== S.me).map(row).join(''), sp = S.spectators.filter((p) => p.id !== S.me).map(row).join('');
+    $ov.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><h3>房主管理</h3>
+      ${ps ? `<div class="sec">玩家</div>${ps}` : ''}${sp ? `<div class="sec" style="margin-top:10px">觀戰者</div>${sp}` : ''}${ps || sp ? '' : '<p class="dim">沒有其他成員</p>'}
+      <div class="dim" style="font-size:13px;margin-top:8px">遊戲中移除玩家後，系統會自動代打（自動贊成、自動出任務成功）。</div>
+      <div class="row"><button class="solid" data-m="close">關閉</button></div></div>`;
+    $ov.hidden = false; return;
+  }
   if (ovMode !== 'role') return;
   const I = S && S.info;
   if (!I) return closeOv();
   const rd = RD[I.role];
   const sees = I.sees.length ? `<p><b>你看到的人：</b>${I.sees.map((x) => `${esc(nm(x.id))}（${x.tag}）`).join('、')}</p>` : '';
   const lake = I.lakeKnown.length ? `<p><b>湖中女神結果：</b>${I.lakeKnown.map((x) => `${esc(nm(x.id))} 是<b style="color:${x.evil ? 'var(--et)' : 'var(--gt)'}">${x.evil ? '邪惡' : '正義'}</b>`).join('、')}</p>` : '';
-  $ov.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><h3>${I.roleName}<span class="camp ${I.evil ? 'evil' : 'good'}">${rd[0]}陣營</span></h3>
-    <p>${rd[1]}</p>${sees}${lake}<div class="row"><button class="solid" data-m="close">關閉</button></div></div>`;
+  $ov.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><div class="rolehead">${cardHtml(I.role)}<div><h3>${I.roleName}<span class="camp ${I.evil ? 'evil' : 'good'}">${rd[0]}陣營</span></h3>
+    <p>${rd[1]}</p></div></div>${sees}${lake}<div class="row"><button class="solid" data-m="close">關閉</button></div></div>`;
   $ov.hidden = false;
 }
 $ov.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-a]');
+  if (b) return activate(b);                           // 房主管理視窗內的按鈕
   const m = e.target.dataset.m;
-  if (e.target === $ov || m === 'close') return closeOv();
+  if (e.target === $ov || m === 'close') {
+    if (ovMode === 'confirm' && backMode) { ovMode = backMode; backMode = null; return syncOv(); }   // 取消確認 → 回到房主管理
+    return closeOv();
+  }
   if (m === 'yes') { const cb = confirmCb; closeOv(); if (cb) cb(); }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ovMode) closeOv(); });
 
 // ---------- 畫面元件 ----------
 function renderLogin() {
-  $app.innerHTML = `<div class="title">阿瓦隆 Avalon</div><div class="sub">遊戲人數5-10人${TEST ? '（測試模式）' : ''}</div>
+  $app.innerHTML = `<div class="title">阿瓦隆</div><div class="sub">5 至 10 人・線上推理對局${TEST ? '（測試模式）' : ''}</div>
     <div class="panel"><input type="text" id="name" maxlength="12" placeholder="暱稱" autocomplete="off">
     <input type="password" id="pw" placeholder="房間密碼" autocomplete="current-password">
     <button class="solid" style="width:100%" id="go">進入遊戲</button></div>`;
@@ -283,7 +336,7 @@ function tags(p) {
 function header() {
   const abort = isHost() && S.phase !== 'lobby' && S.phase !== 'end' ? `<button class="sm evil" data-a="abort">結束本局回到大廳</button>` : '';
   return `<div class="head"><span><b>阿瓦隆</b>　<span class="me">${esc(nm(S.me))}${S.spectator ? '（觀戰者）' : ''}</span></span>
-    <span class="rt"><button class="sm mute" data-a="leave">離開</button>${abort}</span></div>`;
+    <span class="rt">${isHost() ? '<button class="sm" data-a="manage">房主管理</button>' : ''}<button class="sm mute" data-a="leave">離開</button>${abort}</span></div>`;
 }
 
 function testBar() {
@@ -309,7 +362,41 @@ function track() {
 }
 
 // 玩家區：每列 5 位，順序即發車順序
-function grid(o, list) {
+// 玩家區：身分牌，每列 5 位，順序即發車順序
+function grid(o) {
+  o = o || {};
+  const rev = {}; if (S.reveal) S.reveal.forEach((r) => (rev[r.id] = r.key));
+  const sees = {}, lk = {};
+  if (S.info) { S.info.sees.forEach((x) => (sees[x.id] = x.tag)); S.info.lakeKnown.forEach((x) => (lk[x.id] = x.evil)); }
+  const inGame = S.phase !== 'lobby' && !o.reveal;
+  const showVotes = inGame && S.lastVote && S.phase !== 'vote';
+  return `<div class="players">` + S.players.map((p) => {
+    const me = p.id === S.me, hasRole = me && S.info;
+    let key = 'back';                                   // 預設：蓋住的牌背
+    if (rev[p.id]) key = rev[p.id];
+    else if (hasRole) key = showSelf ? S.info.role : 'back';
+    else if (sees[p.id]) key = sees[p.id] === '梅林或莫甘娜' ? 'back_mm' : 'back_evil';
+    else if (p.id in lk && lk[p.id]) key = 'back_evil';
+    const band = [];
+    if (inGame && p.id === S.leader) band.push('<span>隊長</span>');
+    if (inGame && S.lake && p.id === S.lake.holder) band.push('<span>湖中女神</span>');
+    if (inGame && S.team.includes(p.id)) band.push('<span>上車</span>');
+    if (p.id in lk && !lk[p.id] && !rev[p.id]) band.push('<span class="bg">正義</span>');
+    if (inGame && S.phase === 'vote' && S.voted.includes(p.id)) band.push('<span>已投票</span>');
+    if (showVotes && S.lastVote.votes[p.id]) band.push(S.lastVote.votes[p.id] === 'approve' ? '<span class="bg">贊成</span>' : '<span class="be">反對</span>');
+    if (p.left) band.push('<span>已退出</span>'); else if (!p.online && !p.fake) band.push('<span>離線</span>');
+    let ops = '';
+    if (hasRole && !o.reveal) ops = `<button data-a="flip">${showSelf ? '蓋牌' : '翻牌'}</button>`;
+    else if (isHost() && !me && !o.reveal) ops = `<button data-a="setHost" data-d="${p.id}" data-n="${esc(p.name)}" title="指定為房主">房主</button><button class="evil" data-a="kick" data-d="${p.id}" data-n="${esc(p.name)}" title="移除玩家">移除</button>`;
+    const attrs = o.click ? `role="button" tabindex="0" data-a="${o.click}" data-d="${p.id}"`
+      : hasRole && !o.reveal ? 'role="button" tabindex="0" data-a="flip"' : '';
+    const cls = ['pc', me ? 'me' : '', p.online || p.fake || p.left ? '' : 'off', inGame && p.id === S.leader ? 'leader' : '', inGame && S.team.includes(p.id) ? 'picked' : '', o.click && o.dis && o.dis(p) ? 'dis' : ''].join(' ');
+    return `<div class="${cls}" ${attrs}><div class="ops">${ops}</div><div class="n">${p.id === S.hostId ? '♛ ' : ''}${esc(p.name)}</div>${cardHtml(key, band.join(''))}</div>`;
+  }).join('') + `</div>`;
+}
+
+// 觀戰者：沒有身分，使用一般名牌
+function plain(o, list) {
   o = o || {};
   const seen = {}; if (S.info) S.info.sees.forEach((x) => (seen[x.id] = x.tag));
   const showVotes = S.lastVote && S.phase !== 'vote' && S.phase !== 'lobby';
@@ -367,7 +454,7 @@ function zone() {
 function specList() {
   if (!S.spectators.length) return '';
   const open = specOpen === null ? S.phase === 'lobby' : specOpen;
-  return `<details class="panel" data-spec ${open ? 'open' : ''}><summary>觀戰者（${S.spectators.length}）</summary><div style="margin-top:8px">${grid({}, S.spectators)}</div></details>`;
+  return `<details class="panel" data-spec ${open ? 'open' : ''}><summary>觀戰者（${S.spectators.length}）</summary><div style="margin-top:8px">${plain({}, S.spectators)}</div></details>`;
 }
 
 const logBox = () => `<div class="panel"><h3 class="sec">遊戲歷程</h3><ul class="log">${S.log.slice().reverse().map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`;
@@ -398,7 +485,7 @@ function render() {
 
   if (ph === 'end') {
     h += `<div class="banner ${S.winner}"><h2>${S.winner === 'good' ? '正義陣營獲勝' : '邪惡陣營獲勝'}</h2><p>${esc(S.reason)}</p></div>`;
-    h += `<div class="panel"><h3 class="sec">身分揭曉</h3><div class="players">${S.reveal.map((r) => `<div class="p ${r.evil ? 'sees' : ''}"><div class="n">${esc(nm(r.id))}</div><div class="t" style="color:${r.evil ? 'var(--et)' : 'var(--gt)'}">${r.role}</div></div>`).join('')}</div></div>`;
+    h += `<div class="panel"><h3 class="sec">身分揭曉</h3>${grid({ reveal: true })}</div>`;
     h += isHost() ? `<button class="solid" style="width:100%;margin-bottom:12px" data-a="restart">回大廳準備下一局</button>` : `<div class="status dim">等待房主開始下一局</div>`;
     $app.innerHTML = h + specList() + logBox(); syncOv(); return;
   }
@@ -418,6 +505,8 @@ function activate(b) {
   if (!b || b.disabled || b.classList.contains('dis')) return;
   const a = b.dataset.a, d = b.dataset.d, n = b.dataset.n;
   if (a === 'role') { ovMode = 'role'; return syncOv(); }
+  if (a === 'manage') { ovMode = 'manage'; return syncOv(); }
+  if (a === 'flip') { showSelf = !showSelf; return render(); }
   if (a === 'jump') { const t = S.pending[0]; viewAs = t === session.id ? null : t; lastJson = ''; return pollOnce(); }
   if (a === 'leave') return ask('離開遊戲', '確定要離開嗎？' + (S.phase !== 'lobby' && !S.spectator ? '遊戲進行中離開，系統會自動代打你的位置（自動贊成、自動出任務成功）。' : ''), () => emit('leave'), '離開');
   if (a === 'kick') return ask('移除玩家', `確定要移除「${esc(n)}」嗎？他會回到暱稱頁面。` + (S.phase !== 'lobby' ? '遊戲進行中，系統會自動代打他的位置（自動贊成、自動出任務成功）。' : ''), () => emit('kick', d), '移除');
@@ -428,7 +517,7 @@ function activate(b) {
 }
 $app.addEventListener('click', (e) => activate(e.target.closest('[data-a]')));
 $app.addEventListener('keydown', (e) => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.p[role=button]')) { e.preventDefault(); activate(e.target); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.p[role=button], .pc[role=button]')) { e.preventDefault(); activate(e.target); }
 });
 $app.addEventListener('change', (e) => {
   if (e.target.matches('[data-opt]')) {
