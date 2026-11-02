@@ -35,7 +35,10 @@ button.sm{padding:3px 10px;font-size:14px}button.mute{border-color:var(--line);c
 .q.success{background:var(--good);border-color:var(--good);color:#10151f}
 .q.fail{background:var(--evil);border-color:var(--evil);color:#fff}
 .rejects{position:relative;text-align:center;color:var(--dim);font-size:15px;margin:12px 0}
-.idb{position:absolute;left:0;top:50%;transform:translateY(-50%);text-align:left;line-height:1.25;font-size:13px}
+.idb{position:absolute;left:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;max-width:calc(50% - 60px);text-align:left;line-height:1.25;font-size:13px}
+.idb .nk{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;color:var(--ink)}
+body.dark .idb .nk{color:#fff}
+.idb .id{flex:none;display:block}
 .idb b{display:block;font-size:15px}.idb .g{color:var(--gt)}.idb .e{color:var(--et)}
 .idb button{padding:0 6px;font-size:13px;line-height:16px;margin-left:4px;color:var(--dim);border-color:var(--line)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--dim);margin:0 3px}.dot.on{background:var(--evil);border-color:var(--evil)}
@@ -44,8 +47,6 @@ button.sm{padding:3px 10px;font-size:14px}button.mute{border-color:var(--line);c
 .p{position:relative;padding:6px 6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--inset);color:var(--ink);min-height:74px;overflow-wrap:anywhere}
 .p[role=button]{cursor:pointer}.p[role=button]:hover:not(.dis){background:rgba(212,179,106,.12)}
 .p.dis{opacity:.45;cursor:not-allowed}
-.p .ops{display:flex;justify-content:flex-end;gap:3px;min-height:20px;margin-bottom:2px}
-.p .ops button{font-size:11px;padding:0 5px;line-height:18px;border-radius:3px}
 .p .n{font-weight:700;font-size:15px;line-height:1.25}.p .t{font-size:12px;color:var(--dim);line-height:1.3}
 .p .vb{font-size:13px;font-weight:700;margin-top:2px}
 .p.off{opacity:.55}.p.leader{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
@@ -70,11 +71,11 @@ details.panel{padding:8px 12px}details>summary{cursor:pointer;color:var(--dim);f
 .testbar{border:1px dashed var(--gold);border-radius:6px;padding:10px;margin-bottom:12px;font-size:15px}
 .testbar .row{margin-top:6px}.testbar button{padding:4px 10px;font-size:14px}.testbar select{margin:0;padding:6px}
 /* 身分牌 */
+#app>.players{margin-bottom:12px}
 .pc{min-width:0}
-.pc .ops{display:flex;justify-content:flex-end;gap:3px;min-height:20px}
-.pc .ops button{font-size:11px;padding:0 5px;line-height:18px;border-radius:3px}
 .pc .n{font-weight:700;font-size:14px;line-height:1.25;margin:2px 0 3px;overflow-wrap:anywhere}
-.pc.me .n{color:var(--gt)}
+.bd{display:inline-block;font-size:11px;line-height:1.3;padding:0 4px;margin-right:3px;border:1px solid var(--yt);border-radius:3px;color:var(--yt);vertical-align:1px}
+.bd.u{color:var(--gt);border-color:var(--gt)}
 .pc[role=button]{cursor:pointer}.pc.dis{opacity:.45;cursor:not-allowed}
 .pc.off .card{opacity:.55}
 .pc.leader .card{box-shadow:0 0 0 2px var(--gold)}
@@ -179,7 +180,7 @@ let timer = null;
 function startPolling() { if (!timer) timer = setInterval(pollOnce, 2000); }
 
 // ---------- 牌面圖片（放在 index.html 同層的 images 資料夾） ----------
-const IMG_DIR = 'images/', IMG_EXT = 'jpg', IMG_VER = '2';
+const IMG_DIR = 'images/', IMG_EXT = 'jpg', IMG_VER = '2'; 
 const KEYNAME = { merlin: '梅林', percival: '派西維爾', servant: '忠臣', assassin: '刺客', morgana: '莫甘娜', mordred: '莫德雷德', oberon: '奧伯倫', minion: '爪牙', back: '牌背', back_evil: '邪惡', back_mm: '梅林／莫甘娜' };
 const imgSrc = (k) => `${IMG_DIR}${k}.${IMG_EXT}?v=${IMG_VER}`;
 const badImg = {};                                                   // 載入失敗的圖，不再重複請求，改顯示文字牌
@@ -256,7 +257,7 @@ function rulesHtml() {
     <li>最先進入的前 10 位是玩家，之後進入的是觀戰者，觀戰者只能看到公開資訊。每局結束後，才會依進入順序重新分配玩家與觀戰者。</li>
     <li>每局開始時座位順序隨機排定，玩家區由左至右就是發車順序，第一位是第一任隊長。</li>
     <li>遊戲中有人離開、被房主移出，或斷線超過 5 分鐘，系統會代打該位置：自動贊成、自動出任務成功。</li>
-    <li>玩家區是身分牌：自己的牌預設蓋著，按「翻牌」查看；你已知陣營的人會顯示對應的牌背，其餘為一般牌背。</li>
+    <li>玩家區是身分牌：你已知陣營的人會顯示對應的牌背，其餘為一般牌背；點自己的牌可翻開查看（隊長選人時點牌是選人，無法翻牌），也可點任務圓圈下方的「⋯」查看身分說明。</li>
     <li>房主可以指定其他人接任房主，也可以移除玩家。</li>
   </ul></div>`;
 }
@@ -335,8 +336,8 @@ function tags(p) {
 
 function header() {
   const abort = isHost() && S.phase !== 'lobby' && S.phase !== 'end' ? `<button class="sm evil" data-a="abort">結束本局回到大廳</button>` : '';
-  return `<div class="head"><span><b>阿瓦隆</b>　<span class="me">${esc(nm(S.me))}${S.spectator ? '（觀戰者）' : ''}</span></span>
-    <span class="rt">${isHost() ? '<button class="sm" data-a="manage">房主管理</button>' : ''}<button class="sm mute" data-a="leave">離開</button>${abort}</span></div>`;
+  return `<div class="head"><span><b>阿瓦隆</b></span>
+    <span class="rt">${isHost() ? '<button class="sm" data-a="manage">房主管理</button>' : ''}${abort}<button class="sm mute" data-a="leave">離開</button></span></div>`;
 }
 
 function testBar() {
@@ -357,7 +358,7 @@ function track() {
   }).join('');
   const dots = [0, 1, 2].map((i) => `<span class="dot ${i < S.rejects ? 'on' : ''}"></span>`).join('');
   const I = S.info;
-  const idb = I ? `<div class="idb"><b class="${I.evil ? 'e' : 'g'}">${I.roleName}</b>${I.evil ? '邪惡' : '正義'}陣營<button data-a="role" title="查看身分說明" aria-label="查看身分說明">⋯</button></div>` : '';
+  const idb = I ? `<div class="idb"><span class="nk">${esc(nm(S.me))}</span><span class="id"><b class="${I.evil ? 'e' : 'g'}">${I.roleName}</b>${I.evil ? '邪惡' : '正義'}陣營<button data-a="role" title="查看身分說明" aria-label="查看身分說明">⋯</button></span></div>` : '';
   return `<div class="track">${q}</div><div class="rejects">${idb}連續否決 ${dots}</div>`;
 }
 
@@ -371,10 +372,10 @@ function grid(o) {
   const inGame = S.phase !== 'lobby' && !o.reveal;
   const showVotes = inGame && S.lastVote && S.phase !== 'vote';
   return `<div class="players">` + S.players.map((p) => {
-    const me = p.id === S.me, hasRole = me && S.info;
+    const me = p.id === S.me; hasRole = me && S.info;
     let key = 'back';                                   // 預設：蓋住的牌背
     if (rev[p.id]) key = rev[p.id];
-    else if (hasRole) key = showSelf ? S.info.role : 'back';
+    else if (hasRole) key = showSelf && !o.click ? S.info.role : 'back';   // 選人時強制蓋回
     else if (sees[p.id]) key = sees[p.id] === '梅林或莫甘娜' ? 'back_mm' : 'back_evil';
     else if (p.id in lk && lk[p.id]) key = 'back_evil';
     const band = [];
@@ -385,13 +386,11 @@ function grid(o) {
     if (inGame && S.phase === 'vote' && S.voted.includes(p.id)) band.push('<span>已投票</span>');
     if (showVotes && S.lastVote.votes[p.id]) band.push(S.lastVote.votes[p.id] === 'approve' ? '<span class="bg">贊成</span>' : '<span class="be">反對</span>');
     if (p.left) band.push('<span>已退出</span>'); else if (!p.online && !p.fake) band.push('<span>離線</span>');
-    let ops = '';
-    if (hasRole && !o.reveal) ops = `<button data-a="flip">${showSelf ? '蓋牌' : '翻牌'}</button>`;
-    else if (isHost() && !me && !o.reveal) ops = `<button data-a="setHost" data-d="${p.id}" data-n="${esc(p.name)}" title="指定為房主">房主</button><button class="evil" data-a="kick" data-d="${p.id}" data-n="${esc(p.name)}" title="移除玩家">移除</button>`;
     const attrs = o.click ? `role="button" tabindex="0" data-a="${o.click}" data-d="${p.id}"`
       : hasRole && !o.reveal ? 'role="button" tabindex="0" data-a="flip"' : '';
+    const badges = (p.id === S.hostId ? '<span class="bd">房主</span>' : '') + (me ? '<span class="bd u">你</span>' : '');
     const cls = ['pc', me ? 'me' : '', p.online || p.fake || p.left ? '' : 'off', inGame && p.id === S.leader ? 'leader' : '', inGame && S.team.includes(p.id) ? 'picked' : '', o.click && o.dis && o.dis(p) ? 'dis' : ''].join(' ');
-    return `<div class="${cls}" ${attrs}><div class="ops">${ops}</div><div class="n">${p.id === S.hostId ? '♛ ' : ''}${esc(p.name)}</div>${cardHtml(key, band.join(''))}</div>`;
+    return `<div class="${cls}" ${attrs}><div class="n">${badges}${esc(p.name)}</div>${cardHtml(key, band.join(''))}</div>`;
   }).join('') + `</div>`;
 }
 
@@ -406,11 +405,8 @@ function plain(o, list) {
     let vb = '';
     if (S.phase === 'vote') vb = S.voted.includes(p.id) ? '<div class="vb dim">已投票</div>' : '';
     else if (showVotes && S.lastVote.votes[p.id]) { const ok = S.lastVote.votes[p.id] === 'approve'; vb = `<div class="vb" style="color:${ok ? 'var(--gt)' : 'var(--et)'}">${ok ? '贊成' : '反對'}</div>`; }
-    const ops = isHost() && p.id !== S.me
-      ? `<div class="ops"><button data-a="setHost" data-d="${p.id}" data-n="${esc(p.name)}" title="指定為房主">房主</button><button class="evil" data-a="kick" data-d="${p.id}" data-n="${esc(p.name)}" title="移除玩家">移除</button></div>`
-      : (isHost() ? '<div class="ops"></div>' : '');
     const attrs = o.click ? `role="button" tabindex="0" data-a="${o.click}" data-d="${p.id}"` : '';
-    return `<div class="${cls}" ${attrs}>${ops}<div class="n">${esc(p.name)}</div><div class="t">${tags(p)}</div>${vb}</div>`;
+    return `<div class="${cls}" ${attrs}><div class="n">${esc(p.name)}</div><div class="t">${tags(p)}</div>${vb}</div>`;
   }).join('') + `</div>`;
 }
 
