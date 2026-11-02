@@ -179,7 +179,7 @@ let timer = null;
 function startPolling() { if (!timer) timer = setInterval(pollOnce, 2000); }
 
 // ---------- 牌面圖片（放在 index.html 同層的 images 資料夾） ----------
-const IMG_DIR = 'images/', IMG_EXT = 'webp', IMG_VER = '1';   // 換圖後把 IMG_VER 改成 2、3…，避免瀏覽器沿用舊圖
+const IMG_DIR = 'images/', IMG_EXT = 'jpg', IMG_VER = '2';
 const KEYNAME = { merlin: '梅林', percival: '派西維爾', servant: '忠臣', assassin: '刺客', morgana: '莫甘娜', mordred: '莫德雷德', oberon: '奧伯倫', minion: '爪牙', back: '牌背', back_evil: '邪惡', back_mm: '梅林／莫甘娜' };
 const imgSrc = (k) => `${IMG_DIR}${k}.${IMG_EXT}?v=${IMG_VER}`;
 const badImg = {};                                                   // 載入失敗的圖，不再重複請求，改顯示文字牌
